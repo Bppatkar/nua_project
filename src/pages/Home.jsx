@@ -3,8 +3,11 @@ import Navbar from "../components/Navbar";
 import "./home.css";
 import Chart from "../components/Chart";
 import Featured from "../components/Featured";
-// import Table from "../components/Table";
+import TableComponent from "../components/Table";
 import Widget from "../components/Widget";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 const Home = () => {
   return (
@@ -24,7 +27,9 @@ const Home = () => {
         </div>
         <div className="listContainer">
           <div className="listTitle">Latest Transactions</div>
-          {/* <Table /> */}
+          <QueryClientProvider client={queryClient}>
+            <TableComponent />
+          </QueryClientProvider>
         </div>
       </div>
     </div>

@@ -1,102 +1,338 @@
-import "./table.css";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Paper from "@mui/material/Paper";
+import { useMemo, useState } from "react";
+import {
+  MaterialReactTable,
+  useMaterialReactTable,
+} from "material-react-table";
 
-const List = () => {
-  const rows = [
-    {
-      id: 1143155,
-      product: "Acer Nitro 5",
-      img: "https://m.media-amazon.com/images/I/81bc8mA3nKL._AC_UY327_FMwebp_QL65_.jpg",
-      customer: "John Smith",
-      date: "1 March",
-      amount: 785,
-      method: "Cash on Delivery",
-      status: "Approved",
-    },
-    {
-      id: 2235235,
-      product: "Playstation 5",
-      img: "https://m.media-amazon.com/images/I/31JaiPXYI8L._AC_UY327_FMwebp_QL65_.jpg",
-      customer: "Michael Doe",
-      date: "1 March",
-      amount: 900,
-      method: "Online Payment",
-      status: "Pending",
-    },
-    {
-      id: 2342353,
-      product: "Redragon S101",
-      img: "https://m.media-amazon.com/images/I/71kr3WAj1FL._AC_UY327_FMwebp_QL65_.jpg",
-      customer: "John Smith",
-      date: "1 March",
-      amount: 35,
-      method: "Cash on Delivery",
-      status: "Pending",
-    },
-    {
-      id: 2357741,
-      product: "Razer Blade 15",
-      img: "https://m.media-amazon.com/images/I/71wF7YDIQkL._AC_UY327_FMwebp_QL65_.jpg",
-      customer: "Jane Smith",
-      date: "1 March",
-      amount: 920,
-      method: "Online",
-      status: "Approved",
-    },
-    {
-      id: 2342355,
-      product: "ASUS ROG Strix",
-      img: "https://m.media-amazon.com/images/I/81hH5vK-MCL._AC_UY327_FMwebp_QL65_.jpg",
-      customer: "Harold Carol",
-      date: "1 March",
-      amount: 2000,
-      method: "Online",
-      status: "Pending",
-    },
-  ];
-  return (
-    <TableContainer component={Paper} className="table">
-      <Table sx={{ minWidth: 650 }} aria-label="simple table">
-        <TableHead>
-          <TableRow>
-            <TableCell className="tableCell">Tracking ID</TableCell>
-            <TableCell className="tableCell">Product</TableCell>
-            <TableCell className="tableCell">Customer</TableCell>
-            <TableCell className="tableCell">Date</TableCell>
-            <TableCell className="tableCell">Amount</TableCell>
-            <TableCell className="tableCell">Payment Method</TableCell>
-            <TableCell className="tableCell">Status</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {rows.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell className="tableCell">{row.id}</TableCell>
-              <TableCell className="tableCell">
-                <div className="cellWrapper">
-                  <img src={row.img} alt="" className="image" />
-                  {row.product}
-                </div>
-              </TableCell>
-              <TableCell className="tableCell">{row.customer}</TableCell>
-              <TableCell className="tableCell">{row.date}</TableCell>
-              <TableCell className="tableCell">{row.amount}</TableCell>
-              <TableCell className="tableCell">{row.method}</TableCell>
-              <TableCell className="tableCell">
-                <span className={`status ${row.status}`}>{row.status}</span>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+import {
+  Box,
+  Button,
+  CircularProgress,
+  IconButton,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { fakeData, usStates } from "./makeData";
+import DeleteIcon from "@mui/icons-material/Delete";
+
+const TableComponent = () => {
+  const [validationErrors, setValidationErrors] = useState({});
+  const [editedUsers, setEditedUsers] = useState({});
+
+  const columns = useMemo(
+    () => [
+      {
+        accessorKey: "id",
+        header: "Id",
+        enableEditing: false,
+        size: 80,
+      },
+      {
+        accessorKey: "firstName",
+        header: "First Name",
+        muiEditTextFieldProps: ({ cell, row }) => ({
+          type: "text",
+          required: true,
+          error: !!validationErrors?.[cell.id],
+          helperText: validationErrors?.[cell.id],
+          onBlur: (event) => {
+            const validationError = !validateRequired(event.currentTarget.value)
+              ? "Required"
+              : undefined;
+            setValidationErrors({
+              ...validationErrors,
+              [cell.id]: validationError,
+            });
+            setEditedUsers({ ...editedUsers, [row.id]: row.original });
+          },
+        }),
+      },
+      {
+        accessorKey: "lastName",
+        header: "Last Name",
+        muiEditTextFieldProps: ({ cell, row }) => ({
+          type: "text",
+          required: true,
+          error: !!validationErrors?.[cell.id],
+          helperText: validationErrors?.[cell.id],
+          onBlur: (event) => {
+            const validationError = !validateRequired(event.currentTarget.value)
+              ? "Required"
+              : undefined;
+            setValidationErrors({
+              ...validationErrors,
+              [cell.id]: validationError,
+            });
+            setEditedUsers({ ...editedUsers, [row.id]: row.original });
+          },
+        }),
+      },
+      {
+        accessorKey: "email",
+        header: "Email",
+        muiEditTextFieldProps: ({ cell, row }) => ({
+          type: "email",
+          required: true,
+          error: !!validationErrors?.[cell.id],
+          helperText: validationErrors?.[cell.id],
+          onBlur: (event) => {
+            const validationError = !validateEmail(event.currentTarget.value)
+              ? "Incorrect Email Format"
+              : undefined;
+            setValidationErrors({
+              ...validationErrors,
+              [cell.id]: validationError,
+            });
+            setEditedUsers({ ...editedUsers, [row.id]: row.original });
+          },
+        }),
+      },
+      {
+        accessorKey: "state",
+        header: "State",
+        editVariant: "select",
+        editSelectOptions: usStates,
+        muiEditTextFieldProps: ({ row }) => ({
+          select: true,
+          error: !!validationErrors?.state,
+          helperText: validationErrors?.state,
+          onChange: (event) =>
+            setEditedUsers({
+              ...editedUsers,
+              [row.id]: { ...row.original, state: event.target.value },
+            }),
+        }),
+      },
+      {
+        accessorKey: "avatar",
+        header: "Avatar",
+        Cell: ({ cell, row }) => (
+          <img
+            alt="avatar"
+            height={50}
+            src={row.original.avatar}
+            loading="lazy"
+            style={{ borderRadius: "50%" }}
+          />
+        ),
+      },
+    ],
+    [editedUsers, validationErrors]
   );
+
+  const { mutateAsync: createUser, isPending: isCreatingUser } =
+    useCreateUser();
+  const {
+    data: fetchedUsers = [],
+    isError: isLoadingUsersError,
+    isFetching: isFetchingUsers,
+    isLoading: isLoadingUsers,
+  } = useGetUsers();
+  const { mutateAsync: updateUsers, isPending: isUpdatingUsers } =
+    useUpdateUsers();
+  const { mutateAsync: deleteUser, isPending: isDeletingUser } =
+    useDeleteUser();
+
+  const handleCreateUser = async ({ values, table }) => {
+    const newValidationErrors = validateUser(values);
+    if (Object.values(newValidationErrors).some((error) => error)) {
+      setValidationErrors(newValidationErrors);
+      return;
+    }
+    setValidationErrors({});
+    await createUser(values);
+    table.setCreatingRow(null);
+  };
+
+  const handleSaveUsers = async () => {
+    if (Object.values(validationErrors).some((error) => !!error)) return;
+    await updateUsers(Object.values(editedUsers));
+    setEditedUsers({});
+  };
+
+  const openDeleteConfirmModal = (row) => {
+    if (window.confirm("Are you sure you want to delete this user?")) {
+      deleteUser(row.original.id);
+    }
+  };
+
+  const table = useMaterialReactTable({
+    columns,
+    data: fetchedUsers,
+    createDisplayMode: "row",
+    editDisplayMode: "cell",
+    enableCellActions: true,
+    enableClickToCopy: "context-menu",
+    enableColumnPinning: true,
+    enableEditing: true,
+    enableRowActions: true,
+    getRowId: (row) => row.id,
+    muiToolbarAlertBannerProps: isLoadingUsersError
+      ? {
+          color: "error",
+          children: "Error loading data",
+        }
+      : undefined,
+    muiTableContainerProps: {
+      sx: {
+        minHeight: "500px",
+      },
+    },
+    onCreatingRowCancel: () => setValidationErrors({}),
+    onCreatingRowSave: handleCreateUser,
+    renderRowActions: ({ row }) => (
+      <Box sx={{ display: "flex", gap: "1rem" }}>
+        <Tooltip title="Delete">
+          <IconButton color="error" onClick={() => openDeleteConfirmModal(row)}>
+            <DeleteIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    ),
+    renderBottomToolbarCustomActions: () => (
+      <Box sx={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+        <Button
+          color="success"
+          variant="contained"
+          onClick={handleSaveUsers}
+          disabled={
+            Object.keys(editedUsers).length === 0 ||
+            Object.values(validationErrors).some((error) => !!error)
+          }
+        >
+          {isUpdatingUsers ? <CircularProgress size={25} /> : "Save"}
+        </Button>
+        {Object.values(validationErrors).some((error) => !!error) && (
+          <Typography color="error">Fix errors before submitting</Typography>
+        )}
+      </Box>
+    ),
+    renderTopToolbarCustomActions: ({ table }) => (
+      <Button
+        variant="contained"
+        onClick={() => {
+          table.setCreatingRow(true);
+        }}
+      >
+        Create New User
+      </Button>
+    ),
+    state: {
+      isLoading: isLoadingUsers,
+      isSaving: isCreatingUser || isUpdatingUsers || isDeletingUser,
+      showAlertBanner: isLoadingUsersError,
+      showProgressBars: isFetchingUsers,
+    },
+  });
+
+  return <MaterialReactTable table={table} />;
 };
 
-export default List;
+function useCreateUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (user) => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return Promise.resolve();
+    },
+    onMutate: (newUserInfo) => {
+      queryClient.setQueryData(["users"], (prevUsers) => {
+        if (Array.isArray(prevUsers)) {
+          return [
+            ...prevUsers,
+            {
+              ...newUserInfo,
+              id: (Math.random() + 1).toString(36).substring(7),
+            },
+          ];
+        }
+        // Handle the case when prevUsers is not an array
+        return [];
+      });
+    },
+  });
+}
+
+function useGetUsers() {
+  return useQuery({
+    queryKey: ["users"],
+    queryFn: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return Promise.resolve(fakeData);
+    },
+    refetchOnWindowFocus: false,
+  });
+}
+
+function useUpdateUsers() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (users) => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return Promise.resolve();
+    },
+    onMutate: (newUsers) => {
+      queryClient.setQueryData(["users"], (prevUsers) => {
+        if (Array.isArray(prevUsers)) {
+          return prevUsers.map((user) => {
+            const newUser = newUsers.find((u) => u.id === user.id);
+            return newUser ? newUser : user;
+          });
+        }
+        // Handle the case when prevUsers is not an array
+        return [];
+      });
+    },
+  });
+}
+
+function useDeleteUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId) => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return Promise.resolve();
+    },
+    onMutate: (userId) => {
+      queryClient.setQueryData(["users"], (prevUsers) => {
+        if (Array.isArray(prevUsers)) {
+          return prevUsers.filter((user) => user.id !== userId);
+        }
+        // Handle the case when prevUsers is not an array
+        return [];
+      });
+    },
+  });
+}
+
+const validateRequired = (value) => !!value.trim().length; // Trim whitespace before checking length
+
+const validateEmail = (email) =>
+  !!email.length &&
+  email
+    .toLowerCase()
+    .match(
+      /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@(([^<>()[\]\\.,;:\s@"]+\.)+[^<>()[\]\\.,;:\s@"]{2,})$/
+    );
+
+const validateUser = (user) => ({
+  email: validateEmail(user.email) ? undefined : "Incorrect Email Format",
+  firstName: validateRequired(user.firstName)
+    ? undefined
+    : "First Name is required",
+  lastName: validateRequired(user.lastName)
+    ? undefined
+    : "Last Name is required",
+  state: validateRequired(user.state) ? undefined : "State is required",
+});
+
+// const queryClient = new QueryClient();
+
+export default TableComponent;
